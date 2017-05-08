@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="
+ 	  http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://www.springframework.org/schema/mvc 
+      http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+      http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context.xsd
+      http://www.springframework.org/schema/tx   
+      http://www.springframework.org/schema/tx/spring-tx.xsd
+      http://www.springframework.org/schema/task 
+      http://www.springframework.org/schema/task/spring-task.xsd
+      http://www.springframework.org/schema/websocket
+      http://www.springframework.org/schema/websocket/spring-websocket.xsd
+      ">
+	
+	<!-- web socket config -->
+	<bean id="webSocketHandlerCustom" class="com.test.websocket.WebSocketHandlerCustom"/>
+	<bean id="webSocketInterceptor" class="com.test.websocket.WebSocketInterceptor"/>
+	
+	<websocket:handlers allowed-origins="http://test.crm.daojia.com">
+        <websocket:mapping path="/admin/webSocketHandler" handler="webSocketHandlerCustom"/>
+        
+        <!-- The easiest way to customize the initial HTTP WebSocket handshake request is through a HandshakeInterceptor, 
+        	which exposes "before" and "after" the handshake methods. 
+        	Such an interceptor can be used to preclude the handshake or to make any attributes available to the WebSocketSession 
+        	-->
+        <!-- 
+        	A more advanced option is to extend the DefaultHandshakeHandler that performs the steps of the WebSocket handshake, including validating the client origin, negotiating a sub-protocol, and others. 
+        	An application may also need to use this option if it needs to configure a custom RequestUpgradeStrategy in order to adapt to a WebSocket server engine and version that is not yet supported
+         -->
+        <websocket:handshake-interceptors>
+            <!-- <bean class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor"/> -->
+            <ref bean="webSocketInterceptor"/>
+        </websocket:handshake-interceptors>
+        
+        <!-- for Jetty -->
+        <!-- <websocket:handshake-handler ref="handshakeHandler"/> -->
+        
+        <!-- enable SocketJS .
+        The goal of SockJS is to let applications use a WebSocket API 
+        but fall back to non-WebSocket alternatives when necessary at runtime, i.e. without the need to change application code.
+        -->
+        <websocket:sockjs heartbeat-time="2000"
+        	client-library-url="http://test.crm.daojia.com/resources/js/sockjs.min.js">
+        </websocket:sockjs>
+        
+    </websocket:handlers>
+    
+    
+    <!-- Each underlying WebSocket engine exposes configuration properties that control runtime characteristics 
+    	such as the size of message buffer sizes, idle timeout, and others. -->
+    <bean class="org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean">
+        <property name="maxTextMessageBufferSize" value="8192"/>
+        <property name="maxBinaryMessageBufferSize" value="8192"/>
+    </bean>
+    
+    <!-- 
+    For Jetty, you’ll need to supply a pre-configured Jetty WebSocketServerFactory and plug that into Spring’s DefaultHandshakeHandler 
+    through your WebSocket Java config:
+    
+    <bean id="handshakeHandler" class="org.springframework...DefaultHandshakeHandler">
+        <constructor-arg ref="upgradeStrategy"/>
+    </bean>
+
+    <bean id="upgradeStrategy" class="org.springframework...JettyRequestUpgradeStrategy">
+        <constructor-arg ref="serverFactory"/>
+    </bean>
+
+    <bean id="serverFactory" class="org.eclipse.jetty...WebSocketServerFactory">
+        <constructor-arg>
+            <bean class="org.eclipse.jetty...WebSocketPolicy">
+                <constructor-arg value="SERVER"/>
+                <property name="inputBufferSize" value="8092"/>
+                <property name="idleTimeout" value="600000"/>
+            </bean>
+        </constructor-arg>
+    </bean> -->
+</beans>

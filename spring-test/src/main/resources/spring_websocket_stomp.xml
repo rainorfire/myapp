@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="
+ 	  http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://www.springframework.org/schema/mvc 
+      http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+      http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context.xsd
+      http://www.springframework.org/schema/tx   
+      http://www.springframework.org/schema/tx/spring-tx.xsd
+      http://www.springframework.org/schema/task 
+      http://www.springframework.org/schema/task/spring-task.xsd
+      http://www.springframework.org/schema/websocket
+      http://www.springframework.org/schema/websocket/spring-websocket.xsd
+      ">
+	
+	<!-- 
+	The "/websocket-stomp" prefix is arbitrary. You can pick any prefix. 
+	It’s simply meant to differentiate messages to be routed to message-handling methods to do application work 
+	vs messages to be routed to the broker to broadcast to subscribed clients.
+	 -->
+	<websocket:message-broker application-destination-prefix="/stomp" path-matcher="pathMatcher">
+		<websocket:stomp-endpoint allowed-origins="http://localhost:8080" path="/ws_stomp">
+			<websocket:sockjs client-library-url="http://localhost:8080/myproject/resources/js/sockjs.min.js"></websocket:sockjs>
+		</websocket:stomp-endpoint>
+		
+		<!-- 
+		The "/topic" and "/queue" prefixes depend on the broker in use. 
+		In the case of the simple, in-memory broker the prefixes do not have any special meaning; 
+		it’s merely a convention that indicates how the destination is used 
+		(pub-sub targetting many subscribers or point-to-point messages typically targeting an individual recipient). 
+		In the case of using a dedicated broker, most brokers use "/topic" as a prefix for destinations with pub-sub semantics 
+		and "/queue" for destinations with point-to-point semantics. 
+		Check the STOMP page of the broker to see the destination semantics it supports.
+		 -->
+		<!-- <websocket:stomp-broker-relay prefix="/topic,/queue" /> -->
+		
+		<websocket:simple-broker prefix="/topic, /queue"/>
+	</websocket:message-broker>
+	
+	
+   <bean id="pathMatcher" class="org.springframework.util.AntPathMatcher">
+       <constructor-arg index="0" value="." />
+   </bean>
+</beans>

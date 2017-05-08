@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="
+ 	  http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://www.springframework.org/schema/mvc 
+      http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+      http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context.xsd
+      http://www.springframework.org/schema/tx   
+      http://www.springframework.org/schema/tx/spring-tx.xsd
+      http://www.springframework.org/schema/task 
+      http://www.springframework.org/schema/task/spring-task.xsd
+      http://www.springframework.org/schema/websocket
+      http://www.springframework.org/schema/websocket/spring-websocket.xsd
+      ">
+    
+    <!-- This configuration file contains the JMS-infrastructure beans that are shared on both the client and server -->
+    
+    <!-- ********************************** JMS-infrastructure beans. begin ********************************** -->
+	<!-- 真正可以产生Connection的ConnectionFactory，由对应的 JMS服务厂商提供 -->
+	<bean id="activeMQConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+	  <property name="brokerURL" value="tcp://192.168.120.149:61616" />
+	</bean>
+	
+	<bean id="pooledConnectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory">
+	  <property name="connectionFactory" ref="activeMQConnectionFactory" />
+	  <property name="maxConnections" value="10" />
+	</bean>
+	
+	<!-- Spring用于管理真正的ConnectionFactory的ConnectionFactory -->
+	<bean id="connectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+	  <property name="sessionCacheSize" value="5" />
+	  <property name="targetConnectionFactory" ref="pooledConnectionFactory" />
+	</bean>
+	
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+	  <property name="connectionFactory" ref="connectionFactory" />
+	</bean>
+	<!-- ********************************** JMS-infrastructure beans. end ********************************** -->
+	
+	
+	<!-- ********************************** Queues. begin ********************************** -->
+	
+	<!-- crm发过来的消息队列 -->
+	<bean id="crm2Queue" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg value="CRM_WBS_QUEUE"/>
+    </bean>
+    
+	<!-- ********************************** Queues. end ********************************** -->
+	
+	<!-- server side configuration -->
+	<bean class="org.springframework.jms.listener.SimpleMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="destination" ref="crm2Queue"/>
+        <property name="concurrentConsumers" value="8"/>
+        <property name="messageListener" ref="mqMessageReceiveDelegation"/>
+    </bean>
+	<bean id="mqMessageReceiveDelegation" class="com.test.jms.MqMessageReceiveDelegation">
+	</bean>
+</beans>
